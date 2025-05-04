@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Notes</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <h2>Upload Study Notes (Admin Only)</h2>
+  <button onclick="login()">Login with Google</button><br><br>
+
+  <input type="text" id="subject" placeholder="Enter Subject"><br>
+  <input type="text" id="title" placeholder="Note Title"><br>
+  <input type="file" id="pdf"><br>
+  <button onclick="upload()">Upload</button>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "your-app.firebaseapp.com",
+      projectId: "your-app",
+      storageBucket: "your-app.appspot.com",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    function login() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(result => alert("Logged in as: " + result.user.email));
+    }
+
+    function upload() {
+      const subject = document.getElementById("subject").value;
+      const title = document.getElementById("title").value;
+      const file = document.getElementById("pdf").files[0];
+
+      if (!subject || !title || !file) return alert("Please fill all fields.");
+
+      const storageRef = storage.ref(`notes/${subject}/${file.name}`);
+      storageRef.put(file).then(snapshot => {
+        snapshot.ref.getDownloadURL().then(url => {
+          db.collection("notes").add({
+            subject,
+            title,
+            url
+          }).then(() => alert("Uploaded successfully!"));
+        });
+      });
+    }
+  </script>
+</body>
+</html>
